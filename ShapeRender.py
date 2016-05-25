@@ -67,7 +67,7 @@ class ShapeRender(object):
     def read_data(self, shapefile):
         cursor = self.sqlcur.execute("SELECT ID_Shape FROM Shapes WHERE Name = ?", (shapefile,))
         id_shape = cursor.fetchone()
-        if len(id_shape) > 0:
+        if id_shape:
             print 'Shape ID = ' + str(id_shape[0])
         else:
             print 'No id_shape'
@@ -122,26 +122,26 @@ class ShapeRender(object):
         
         cursor = self.sqlcur.execute("SELECT Name FROM Shapes")
         shapes = cursor.fetchall()
-        if len(shapes) > 0:
+        if shapes:
             print shapes
         else:
             print 'No shapes'
    
 if __name__ == '__main__':
-    config1 = []
-    config1.append(3840)    #[0] image width
-    config1.append(2160)    #[1] image height (height will be adjusted)
-    #whole world
-    config1.append(-180.0)    #[2] xmin (smallest longitude)
-    config1.append(-90.0)    #[3] ymin (smallest latitude)
-    config1.append(180.0)    #[4] xmax (biggest longitude)
-    config1.append(90.0)    #[5] ymax (biggest latitude)
-    config1.append(1)    #[6] linewidth
-    config1.append(5)    #[7] dotsize
-    config1.append('lightblue')  #[8] image background color
-    config1.append('brown')    #[9] color for first shape
-    config1.append('ne_50m_land') #[10] first shape
-    #config[0] - config[10] is mandatory
+    config1 = [
+        3840,           #  [0] image width
+        2160,           #  [1] image height (height will be adjusted)
+    # whole world
+        -180.0,         #  [2] xmin (smallest longitude)
+        -90.0,          #  [3] ymin (smallest latitude)
+        180.0,          #  [4] xmax (biggest longitude)
+        90.0,           #  [5] ymax (biggest latitude)
+        1,              #  [6] linewidth
+        5,              #  [7] dotsize
+        'lightblue',    #  [8] image background color
+        'brown',        #  [9] color for first shape
+        'ne_50m_land']  # [10] first shape
+        # config[0] - config[10] is mandatory
     
     config2 = []
     config2.append(3840)    #[0] image width
