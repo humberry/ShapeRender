@@ -131,7 +131,7 @@ if __name__ == '__main__':
     config1 = [
         3840,           #  [0] image width
         2160,           #  [1] image height (height will be adjusted)
-    # whole world
+        # whole world
         -180.0,         #  [2] xmin (smallest longitude)
         -90.0,          #  [3] ymin (smallest latitude)
         180.0,          #  [4] xmax (biggest longitude)
@@ -142,41 +142,41 @@ if __name__ == '__main__':
         'brown',        #  [9] color for first shape
         'ne_50m_land']  # [10] first shape
         # config[0] - config[10] is mandatory
-    
-    config2 = []
-    config2.append(3840)    #[0] image width
-    config2.append(2160)    #[1] image height (height will be adjusted)
-    #USA
-    config2.append(-129.8)    #[2] xmin (smallest longitude)
-    config2.append(22.7)    #[3] ymin (smallest latitude)
-    config2.append(-63.5)    #[4] xmax (biggest longitude)
-    config2.append(49.7)    #[5] ymax (biggest latitude)
-    config2.append(1)    #[6] linewidth
-    config2.append(5)    #[7] dotsize
-    config2.append('white')  #[8] image background color
-    config2.append('black')    #[9] color for first shape
-    config2.append('ne_50m_coastline') #[10] first shape
-    config2.append('lightgreen')    #[11] color
-    config2.append('ne_50m_urban_areas') #[12] shape
-    config2.append('lightblue')    #[13] color
-    config2.append('ne_50m_lakes') #[14] shape
-    config2.append('red')    #[15] color
-    config2.append('ne_50m_populated_places_simple') #[16] shape
-    
-    config3 = []
-    config3.append(3840)    #[0] image width
-    config3.append(2160)    #[1] image height (height will be adjusted)
-    #Europe
-    config3.append(-15.4)    #[2] xmin (smallest longitude)
-    config3.append(35.0)    #[3] ymin (smallest latitude)
-    config3.append(37.5)    #[4] xmax (biggest longitude)
-    config3.append(72.0)    #[5] ymax (biggest latitude)
-    config3.append(2)    #[6] linewidth
-    config3.append(5)    #[7] dotsize
-    config3.append('white')  #[8] image background color
-    config3.append('black')    #[9] color for first shape
-    config3.append('ne_50m_coastline') #[10] first shape
-    config3.append('red')    #[11] color
-    config3.append('ne_50m_admin_0_boundary_lines_land') #[12] shape
+
+    config2 = [
+        3840,           #  [0] image width
+        2160,           #  [1] image height (height will be adjusted)
+        # USA
+        -129.8,         #  [2] xmin (smallest longitude)
+        22.7,           #  [3] ymin (smallest latitude)
+        -63.5,          #  [4] xmax (biggest longitude)
+        49.7,           #  [5] ymax (biggest latitude)
+        1,              #  [6] linewidth
+        5,              #  [7] dotsize
+        'white',        #  [8] image background color
+        'black',        #  [9] color for first shape
+        'ne_50m_coastline',     #[10] first shape    
+        'lightgreen',           #[11] color
+        'ne_50m_urban_areas',   #[12] shape
+        'lightblue',            #[13] color
+        'ne_50m_lakes',         #[14] shape
+        'red',                  #[15] color
+        'ne_50m_populated_places_simple']   #[16] shape
+
+    config3 = [
+        3840,           #  [0] image width
+        2160,           #  [1] image height (height will be adjusted)
+        # Europe
+        -15.4,          #  [2] xmin (smallest longitude)
+        35.0,           #  [3] ymin (smallest latitude)
+        37.5,           #  [4] xmax (biggest longitude)
+        72.0,           #  [5] ymax (biggest latitude)
+        2,              #  [6] linewidth
+        5,              #  [7] dotsize
+        'white',        #  [8] image background color
+        'black',        #  [9] color for first shape
+        'ne_50m_coastline',     #[10] first shape    
+        'red',                  #[11] color
+        'ne_50m_admin_0_boundary_lines_land']   #[12] shape
 
     ShapeRender(config1)
