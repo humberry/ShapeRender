@@ -1,6 +1,6 @@
 # coding: utf-8
 from struct import unpack
-import math, Image, ImageDraw, ui, scene, sys, sqlite3
+import math, Image, ImageDraw, ImageFont, ui, scene, sys, sqlite3
 from timeit import default_timer as timer
 from StringIO import StringIO
 
@@ -42,14 +42,19 @@ class ShapeRender(object):
         self.drawbuffer = None
         self.bgcolor = config[4]
         self.line_or_dot_size = None
-        self.font_size = None
         self.color = None
         
+        if config[2][0] != None:
+            self.fontcolor = config[2][1]
+            self.fontsize = config[2][2]
+            self.font = ImageFont.truetype(config[2][0], self.fontsize)
+
         self.pixel = self.scr_width / self.xdelta
         print 'pixel = ' + str(self.pixel)
         img_height = self.scr_width / (self.xdelta / self.ydelta)
         self.imagebuffer = Image.new('RGBA', (int(self.scr_width),int(img_height)), self.bgcolor)
         self.drawbuffer = ImageDraw.Draw(self.imagebuffer)
+        
         if self.xmin != -180.0:
             self.xoffset = self.xmin * -1
         print 'xoffset = ' + str(self.xoffset)
@@ -61,6 +66,7 @@ class ShapeRender(object):
             self.color = config[i][1]
             self.line_or_dot_size = config[i][2]
             self.read_data(config[i][0])
+            
         if config[3][0] != None:
             self.color = config[3][0]
             self.line_or_dot_size = config[3][2]
@@ -91,18 +97,21 @@ class ShapeRender(object):
             full_deg_y_off = (self.ymin - (int(self.ymin) + 1)) * -1
         else:
             full_deg_y_off = (self.ymin - int(self.ymin)) * -1
+        width, height = self.drawbuffer.textsize('0', font=self.font)
         for x in xrange(x_start,x_end):
             x1 = (gridspacing * x + self.xoffset + full_deg_x_off) * self.pixel
             y1 = ((90 - self.yoffset) * -1) * self.pixel
             x2 = (gridspacing * x + self.xoffset + full_deg_x_off) * self.pixel
             y2 = ((-90 - self.yoffset) * -1) * self.pixel
             self.drawbuffer.line(((x1,y1),(x2,y2)), fill=self.color, width=self.line_or_dot_size)
+            self.drawbuffer.text((x1 + 5, 5), str(gridspacing * x), self.fontcolor, font=self.font)
         for y in xrange(y_start,y_end):
             x1 = (-180 + self.xoffset) * self.pixel
             y1 = ((gridspacing * y - self.yoffset + full_deg_y_off) * -1) * self.pixel
             x2 = (180 + self.xoffset) * self.pixel
             y2 = ((gridspacing * y - self.yoffset + full_deg_y_off) * -1) * self.pixel
             self.drawbuffer.line(((x1,y1),(x2,y2)), fill=self.color, width=self.line_or_dot_size)
+            self.drawbuffer.text((5, y1 - 5 - height), str(gridspacing * y), 'black', font=self.font)
         
     def read_data(self, shapefile):
         cursor = self.sqlcur.execute("SELECT ID_Shape FROM Shapes WHERE Name = ?", (shapefile,))
@@ -173,7 +182,7 @@ if __name__ == '__main__':
         # whole world
         (-180.0, -90.0, 180.0, 90.0),     # [1] xmin (smallest longitude), ymin (smallest latitude),
                                           #     xmax (biggest longitude),  ymax (biggest latitude)
-        (None, None),                     # [2] font color, font size
+        ('Arial', 'black', 40),           # [2] font, font color, font size
         (None, None, None),               # [3] grid color, grid spacing, linewidth
         #('black', 30, 2),                # [3] grid color, grid spacing, linewidth
         'lightblue',                      # [4] image background color
@@ -184,7 +193,7 @@ if __name__ == '__main__':
         (3840, 2160),                     # [0] image width, image height
         # USA
         (-129.8, 22.7, -63.5, 49.7),      # [1] xmin, ymin, xmax, ymax
-        (None, None),                     # [2] font color, font size
+        ('Arial', 'black', 40),           # [2] font, font color, font size
         ('black', 5, 2),                  # [3] grid color, grid spacing, linewidth
         'white',                          # [4] image background color
         ('ne_50m_coastline', 'black', 1), # [5] (shape, color, line-/dotsize)
@@ -196,10 +205,10 @@ if __name__ == '__main__':
         (3840, 2160),                     # [0] image width, image height
         # Europe
         (-15.4, 35.0, 37.5, 72.0),        # [1] xmin, ymin, xmax, ymax
-        (None, None),                     # [2] font color, font size
+        ('Arial', 'black', 40),           # [2] font, font color, font size
         ('black', 5, 2),                  # [3] grid color, grid spacing, linewidth
         'white',                          # [4] image background color
         ('ne_50m_coastline', 'black', 2), # [5] (shape, color, line-/dotsize)
         ('ne_50m_admin_0_boundary_lines_land', 'red', 2)]      # [6] next shape
 
-    ShapeRender(config3)
+    ShapeRender(config1)
