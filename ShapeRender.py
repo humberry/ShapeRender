@@ -13,36 +13,36 @@ class ShapeRender(object):
         #scr = ui.get_screen_size() * scene.get_screen_scale()
         #self.scr_width = scr[0]
         #self.scr_height = scr[1] - 64.0    #title bar = 64px
-        self.scr_width = config[0]
-        self.scr_height = config[1]
+        self.scr_width = config[0][0]
+        self.scr_height = config[0][1]
         self.sqlcon = None
         self.sqlcur = None
         
         self.read_db()
-        xmin = config[2]
-        ymin = config[3]
-        xmax = config[4]
-        ymax = config[5]
+        self.xmin = config[1][0]
+        self.ymin = config[1][1]
+        self.xmax = config[1][2]
+        self.ymax = config[1][3]
         self.xoffset = 180.0
         self.yoffset = 90.0
-        if xmin < 0 and xmax > 0:
-            self.xdelta = abs(xmax) + abs(xmin)
-        elif xmin < 0 and xmax < 0:
-            self.xdelta = abs(xmin) - abs(xmax)
+        if self.xmin < 0 and self.xmax > 0:
+            self.xdelta = abs(self.xmax) + abs(self.xmin)
+        elif self.xmin < 0 and self.xmax < 0:
+            self.xdelta = abs(self.xmin) - abs(self.xmax)
         else:
-            self.xdelta = abs(xmax) - abs(xmin)
-        if ymin < 0 and ymax > 0:
-            self.ydelta = abs(ymax) + abs(ymin)
-        elif ymin < 0 and ymax < 0:
-            self.ydelta = abs(ymin) - abs(ymax)
+            self.xdelta = abs(self.xmax) - abs(self.xmin)
+        if self.ymin < 0 and self.ymax > 0:
+            self.ydelta = abs(self.ymax) + abs(self.ymin)
+        elif self.ymin < 0 and self.ymax < 0:
+            self.ydelta = abs(self.ymin) - abs(self.ymax)
         else:
-            self.ydelta = abs(ymax) - abs(ymin)
+            self.ydelta = abs(self.ymax) - abs(self.ymin)
         print str(self.xdelta) + ' / ' + str(self.ydelta)
         self.imagebuffer = None
         self.drawbuffer = None
-        self.linewidth = config[6]
-        self.dotsize = config[7]
-        self.bgcolor = config[8]
+        self.bgcolor = config[4]
+        self.line_or_dot_size = None
+        self.font_size = None
         self.color = None
         
         self.pixel = self.scr_width / self.xdelta
@@ -50,19 +50,59 @@ class ShapeRender(object):
         img_height = self.scr_width / (self.xdelta / self.ydelta)
         self.imagebuffer = Image.new('RGBA', (int(self.scr_width),int(img_height)), self.bgcolor)
         self.drawbuffer = ImageDraw.Draw(self.imagebuffer)
-        if xmin != -180.0:
-            self.xoffset = xmin * -1
+        if self.xmin != -180.0:
+            self.xoffset = self.xmin * -1
         print 'xoffset = ' + str(self.xoffset)
-        if ymin != -90.0:
-            self.yoffset = ymax
+        if self.ymin != -90.0:
+            self.yoffset = self.ymax
         print 'yoffset = ' + str(self.yoffset)
-        for i in range(9, len(config), 2):
-            self.color = config[i]
-            self.read_data(config[i+1])
+        
+        for i in range(5, len(config)):
+            self.color = config[i][1]
+            self.line_or_dot_size = config[i][2]
+            self.read_data(config[i][0])
+        if config[3][0] != None:
+            self.color = config[3][0]
+            self.line_or_dot_size = config[3][2]
+            self.draw_grid(config[3][1])
 
         self.imagebuffer.show()
         #end = timer()
         #print 'time for select: ' + str(end-start)
+        
+    def draw_grid(self, gridspacing):
+        ratio = self.xdelta / self.ydelta
+        x_range = self.xdelta / gridspacing
+        y_range = x_range / ratio
+        x_start = int(self.xmin / gridspacing)
+        x_end = int(x_start + x_range) + 1
+        y_start = int(self.ymin / gridspacing)
+        y_end = int(y_start + y_range) + 1
+        if self.xmin < 0 and self.xmax > 0:
+            x_start += 1
+        if self.ymin < 0 and self.ymax > 0:
+            y_start += 1
+        #draw line to next full degree
+        if self.xmin >= 0:
+            full_deg_x_off = (self.xmin - (int(self.xmin) + 1)) * -1
+        else:
+            full_deg_x_off = (self.xmin - int(self.xmin)) * -1
+        if self.ymin >= 0:
+            full_deg_y_off = (self.ymin - (int(self.ymin) + 1)) * -1
+        else:
+            full_deg_y_off = (self.ymin - int(self.ymin)) * -1
+        for x in xrange(x_start,x_end):
+            x1 = (gridspacing * x + self.xoffset + full_deg_x_off) * self.pixel
+            y1 = ((90 - self.yoffset) * -1) * self.pixel
+            x2 = (gridspacing * x + self.xoffset + full_deg_x_off) * self.pixel
+            y2 = ((-90 - self.yoffset) * -1) * self.pixel
+            self.drawbuffer.line(((x1,y1),(x2,y2)), fill=self.color, width=self.line_or_dot_size)
+        for y in xrange(y_start,y_end):
+            x1 = (-180 + self.xoffset) * self.pixel
+            y1 = ((gridspacing * y - self.yoffset + full_deg_y_off) * -1) * self.pixel
+            x2 = (180 + self.xoffset) * self.pixel
+            y2 = ((gridspacing * y - self.yoffset + full_deg_y_off) * -1) * self.pixel
+            self.drawbuffer.line(((x1,y1),(x2,y2)), fill=self.color, width=self.line_or_dot_size)
         
     def read_data(self, shapefile):
         cursor = self.sqlcur.execute("SELECT ID_Shape FROM Shapes WHERE Name = ?", (shapefile,))
@@ -94,12 +134,12 @@ class ShapeRender(object):
                 x = (points[j][2] + self.xoffset) * self.pixel
                 y = ((points[j][3] - self.yoffset) * -1) * self.pixel
                 if self.shape_type_def[shape_type] == 'Point':
-                    self.drawbuffer.ellipse((x - self.dotsize, y - self.dotsize, x + self.dotsize, y + self.dotsize), fill=self.color)
+                    self.drawbuffer.ellipse((x - self.line_or_dot_size, y - self.line_or_dot_size, x + self.line_or_dot_size, y + self.line_or_dot_size), fill=self.color)
                 else:
                     drawpoints.append((x, y))
             else:
                 if self.shape_type_def[shape_type] == 'PolyLine':
-                    self.drawbuffer.line(drawpoints, fill=self.color, width=self.linewidth)
+                    self.drawbuffer.line(drawpoints, fill=self.color, width=self.line_or_dot_size)
                 elif self.shape_type_def[shape_type] == 'Polygon':
                     self.drawbuffer.polygon(drawpoints, fill=self.color)
                 else:
@@ -112,7 +152,7 @@ class ShapeRender(object):
                 drawpoints.append((x, y))
             if j == len(points) - 1:
                 if self.shape_type_def[shape_type] == 'PolyLine':
-                    self.drawbuffer.line(drawpoints, fill=self.color, width=self.linewidth)
+                    self.drawbuffer.line(drawpoints, fill=self.color, width=self.line_or_dot_size)
                 elif self.shape_type_def[shape_type] == 'Polygon':
                     self.drawbuffer.polygon(drawpoints, fill=self.color)
         
@@ -129,54 +169,37 @@ class ShapeRender(object):
    
 if __name__ == '__main__':
     config1 = [
-        3840,           #  [0] image width
-        2160,           #  [1] image height (height will be adjusted)
+        (3840, 2160),                     # [0] image width, image height (will be adjusted)
         # whole world
-        -180.0,         #  [2] xmin (smallest longitude)
-        -90.0,          #  [3] ymin (smallest latitude)
-        180.0,          #  [4] xmax (biggest longitude)
-        90.0,           #  [5] ymax (biggest latitude)
-        1,              #  [6] linewidth
-        5,              #  [7] dotsize
-        'lightblue',    #  [8] image background color
-        'brown',        #  [9] color for first shape
-        'ne_50m_land']  # [10] first shape
-        # config[0] - config[10] is mandatory
+        (-180.0, -90.0, 180.0, 90.0),     # [1] xmin (smallest longitude), ymin (smallest latitude),
+                                          #     xmax (biggest longitude),  ymax (biggest latitude)
+        (None, None),                     # [2] font color, font size
+        (None, None, None),               # [3] grid color, grid spacing, linewidth
+        #('black', 30, 2),                # [3] grid color, grid spacing, linewidth
+        'lightblue',                      # [4] image background color
+        ('ne_50m_land', 'brown', 1)]      # [5] tuple (shape, color, linewidth or dotsize)
+        # config[0] - config[5] is mandatory
 
     config2 = [
-        3840,           #  [0] image width
-        2160,           #  [1] image height (height will be adjusted)
+        (3840, 2160),                     # [0] image width, image height
         # USA
-        -129.8,         #  [2] xmin (smallest longitude)
-        22.7,           #  [3] ymin (smallest latitude)
-        -63.5,          #  [4] xmax (biggest longitude)
-        49.7,           #  [5] ymax (biggest latitude)
-        1,              #  [6] linewidth
-        5,              #  [7] dotsize
-        'white',        #  [8] image background color
-        'black',        #  [9] color for first shape
-        'ne_50m_coastline',     #[10] first shape    
-        'lightgreen',           #[11] color
-        'ne_50m_urban_areas',   #[12] shape
-        'lightblue',            #[13] color
-        'ne_50m_lakes',         #[14] shape
-        'red',                  #[15] color
-        'ne_50m_populated_places_simple']   #[16] shape
+        (-129.8, 22.7, -63.5, 49.7),      # [1] xmin, ymin, xmax, ymax
+        (None, None),                     # [2] font color, font size
+        ('black', 5, 2),                  # [3] grid color, grid spacing, linewidth
+        'white',                          # [4] image background color
+        ('ne_50m_coastline', 'black', 1), # [5] (shape, color, line-/dotsize)
+        ('ne_50m_urban_areas', 'lightgreen', 1),               # [6] next shape
+        ('ne_50m_lakes', 'lightblue', 1),                      # [7] next shape
+        ('ne_50m_populated_places_simple', 'red', 5)]          # [8] next shape
 
     config3 = [
-        3840,           #  [0] image width
-        2160,           #  [1] image height (height will be adjusted)
+        (3840, 2160),                     # [0] image width, image height
         # Europe
-        -15.4,          #  [2] xmin (smallest longitude)
-        35.0,           #  [3] ymin (smallest latitude)
-        37.5,           #  [4] xmax (biggest longitude)
-        72.0,           #  [5] ymax (biggest latitude)
-        2,              #  [6] linewidth
-        5,              #  [7] dotsize
-        'white',        #  [8] image background color
-        'black',        #  [9] color for first shape
-        'ne_50m_coastline',     #[10] first shape    
-        'red',                  #[11] color
-        'ne_50m_admin_0_boundary_lines_land']   #[12] shape
+        (-15.4, 35.0, 37.5, 72.0),        # [1] xmin, ymin, xmax, ymax
+        (None, None),                     # [2] font color, font size
+        ('black', 5, 2),                  # [3] grid color, grid spacing, linewidth
+        'white',                          # [4] image background color
+        ('ne_50m_coastline', 'black', 2), # [5] (shape, color, line-/dotsize)
+        ('ne_50m_admin_0_boundary_lines_land', 'red', 2)]      # [6] next shape
 
-    ShapeRender(config1)
+    ShapeRender(config3)
