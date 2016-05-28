@@ -132,18 +132,22 @@ class ShapeRender(object):
         shape_type = cursor.fetchone()[0]
         print 'ShapeType = ' + str(shape_type)
 
-        cursor = self.sqlcur.execute("SELECT ID_Poly, ID_Point, X, Y FROM Points WHERE ID_Poly >= ? AND ID_Poly <= ? ORDER BY ID_Poly, ID_Point", (min_id_poly, max_id_poly))
+        cursor = self.sqlcur.execute("SELECT ID_Poly, ID_Point, X, Y, Name FROM Points WHERE ID_Poly >= ? AND ID_Poly <= ? ORDER BY ID_Poly, ID_Point", (min_id_poly, max_id_poly))
         points = cursor.fetchall()
         print 'length points: ' + str(len(points))
 
         id_poly = min_id_poly
         drawpoints = []
+        width, height = self.drawbuffer.textsize('0', font=self.font)
         for j in xrange(len(points)):
             if points[j][0] == id_poly:       
                 x = (points[j][2] + self.xoffset) * self.pixel
                 y = ((points[j][3] - self.yoffset) * -1) * self.pixel
                 if self.shape_type_def[shape_type] == 'Point':
                     self.drawbuffer.ellipse((x - self.line_or_dot_size, y - self.line_or_dot_size, x + self.line_or_dot_size, y + self.line_or_dot_size), fill=self.color)
+                    if points[j][4] != None:
+                        name = (points[j][4]).decode('utf8')
+                        self.drawbuffer.text((x + self.line_or_dot_size, y - height), name, self.fontcolor, font=self.font)
                 else:
                     drawpoints.append((x, y))
             else:
@@ -194,12 +198,14 @@ if __name__ == '__main__':
         # USA
         (-129.8, 22.7, -63.5, 49.7),      # [1] xmin, ymin, xmax, ymax
         ('Arial', 'black', 40),           # [2] font, font color, font size
-        ('black', 5, 2),                  # [3] grid color, grid spacing, linewidth
+        #('black', 5, 2),                  # [3] grid color, grid spacing, linewidth
+        (None, None, None),               # [3] grid color, grid spacing, linewidth
         'white',                          # [4] image background color
         ('ne_50m_coastline', 'black', 1), # [5] (shape, color, line-/dotsize)
         ('ne_50m_urban_areas', 'lightgreen', 1),               # [6] next shape
         ('ne_50m_lakes', 'lightblue', 1),                      # [7] next shape
-        ('ne_50m_populated_places_simple', 'red', 5)]          # [8] next shape
+        ('ne_50m_populated_places_simple', 'red', 5),          # [8] next shape
+        ('ne_50m_admin_0_boundary_lines_land', 'red', 2)]      # [9] next shape
 
     config3 = [
         (3840, 2160),                     # [0] image width, image height
@@ -209,6 +215,9 @@ if __name__ == '__main__':
         ('black', 5, 2),                  # [3] grid color, grid spacing, linewidth
         'white',                          # [4] image background color
         ('ne_50m_coastline', 'black', 2), # [5] (shape, color, line-/dotsize)
-        ('ne_50m_admin_0_boundary_lines_land', 'red', 2)]      # [6] next shape
-
+        ('ne_50m_land', 'lightyellow', 1),                     # [6] next shape
+        ('ne_50m_admin_0_boundary_lines_land', 'red', 2),      # [7] next shape
+        ('ne_50m_urban_areas', 'lightgreen', 1),               # [8] next shape
+        ('ne_50m_populated_places_simple', 'red', 5)]          # [9] next shape
+        
     ShapeRender(config1)
