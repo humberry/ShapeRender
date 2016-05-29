@@ -162,17 +162,15 @@ class ShapeRender(object):
         width, height = self.drawbuffer.textsize('0', font=self.font)
         for x in xrange(gridlines_x):
             x1 = ((xstart + self.xoffset) + (x * gridspacing)) * self.pixel
-            y1 = ((90 - self.yoffset) * -1) * self.pixel
-            x2 = ((xstart + self.xoffset) + (x * gridspacing)) * self.pixel
-            y2 = ((-90 - self.yoffset) * -1) * self.pixel
-            self.drawbuffer.line(((x1,y1),(x2,y2)), fill=self.color, width=self.line_or_dot_size)
+            y1 = ((self.ymax - self.yoffset) * -1) * self.pixel
+            y2 = ((self.ymin - self.yoffset) * -1) * self.pixel
+            self.drawbuffer.line(((x1,y1),(x1,y2)), fill=self.color, width=self.line_or_dot_size)
             self.drawbuffer.text((x1 + 5, 5), str((gridspacing * x) + xstart), self.fontcolor, font=self.font)
         for y in xrange(gridlines_y):
-            x1 = (-180 + self.xoffset) * self.pixel
+            x1 = (self.xmin + self.xoffset) * self.pixel
             y1 = (((ystart - self.yoffset) + (gridspacing * y)) * -1) * self.pixel
-            x2 = (180 + self.xoffset) * self.pixel
-            y2 = (((ystart - self.yoffset) + (gridspacing * y)) * -1) * self.pixel
-            self.drawbuffer.line(((x1,y1),(x2,y2)), fill=self.color, width=self.line_or_dot_size)
+            x2 = (self.xmax + self.xoffset) * self.pixel
+            self.drawbuffer.line(((x1,y1),(x2,y1)), fill=self.color, width=self.line_or_dot_size)
             self.drawbuffer.text((5, y1 - 5 - height), str((gridspacing * y) + ystart), 'black', font=self.font)
         
     def read_data(self, shapefile):
