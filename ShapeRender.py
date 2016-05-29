@@ -77,41 +77,103 @@ class ShapeRender(object):
         #print 'time for select: ' + str(end-start)
         
     def draw_grid(self, gridspacing):
-        ratio = self.xdelta / self.ydelta
-        x_range = self.xdelta / gridspacing
-        y_range = x_range / ratio
-        x_start = int(self.xmin / gridspacing)
-        x_end = int(x_start + x_range) + 1
-        y_start = int(self.ymin / gridspacing)
-        y_end = int(y_start + y_range) + 1
-        if self.xmin < 0 and self.xmax > 0:
-            x_start += 1
-        if self.ymin < 0 and self.ymax > 0:
-            y_start += 1
-        #draw line to next full degree
-        if self.xmin >= 0:
-            full_deg_x_off = (self.xmin - (int(self.xmin) + 1)) * -1
+        xmin_int = int(self.xmin)
+        xmax_int = int(self.xmax)
+        ymin_int = int(self.ymin)
+        ymax_int = int(self.ymax)
+        
+        xstart = None
+        xend = None
+        start = None
+        if (xmin_int * 1.0) == self.xmin:
+            xstart = xmin_int
+            #print 'whole degree at ' + str(xstart)
         else:
-            full_deg_x_off = (self.xmin - int(self.xmin)) * -1
-        if self.ymin >= 0:
-            full_deg_y_off = (self.ymin - (int(self.ymin) + 1)) * -1
+            if self.xmin < 0:        # neg value
+                start = xmin_int - 1
+            else:
+                start = xmin_int
+        if not xstart:                # value != x.0
+            while start <= self.xmax:
+                if start > self.xmin and start <= self.xmax:    # first grid line
+                    xstart = start
+                    break
+                start += gridspacing
+            if not xstart:
+                xstart = self.xmax
+                #print 'Gridspacing is too wide!'
+        start = xstart
+        if xstart < self.xmax:
+            while start <= self.xmax:
+                if (start + gridspacing) <= self.xmax:
+                    start += gridspacing
+                else:
+                    if start > xstart and start <= self.xmax:
+                        xend = start
+                        break
+                    else:
+                        xend = self.xmax
+                        #print 'Gridspacing is too wide!'
+                        break
         else:
-            full_deg_y_off = (self.ymin - int(self.ymin)) * -1
+            xend = self.xmax
+            #print 'Gridspacing is too wide!'
+
+        ystart = None
+        yend = None
+        start = None
+        if (ymin_int * 1.0) == self.ymin:
+            ystart = ymin_int
+            #print 'whole degree at ' + str(ystart)
+        else:
+            if self.ymin < 0:        # neg value
+                start = ymin_int - 1
+            else:
+                start = ymin_int
+        if not ystart:                # value != x.0
+            while start <= self.ymax:
+                if start > self.ymin and start <= self.ymax:    # first grid line
+                    ystart = start
+                    break
+                start += gridspacing
+            if not ystart:
+                ystart = self.ymax
+                #print 'Gridspacing is too wide!'
+        start = ystart
+        if ystart < self.ymax:
+            while start <= self.ymax:
+                if (start + gridspacing) <= self.ymax:
+                    start += gridspacing
+                else:
+                    if start > ystart and start <= self.ymax:
+                        yend = start
+                        break
+                    else:
+                        yend = self.ymax
+                        #print 'Gridspacing is too wide!'
+                        break
+        else:
+            yend = self.ymax
+            #print 'Gridspacing is too wide!'
+
+        gridlines_x = int((xend - xstart) / gridspacing) + 1
+        gridlines_y = int((yend - ystart) / gridspacing) + 1
+        
         width, height = self.drawbuffer.textsize('0', font=self.font)
-        for x in xrange(x_start,x_end):
-            x1 = (gridspacing * x + self.xoffset + full_deg_x_off) * self.pixel
+        for x in xrange(gridlines_x):
+            x1 = ((xstart + self.xoffset) + (x * gridspacing)) * self.pixel
             y1 = ((90 - self.yoffset) * -1) * self.pixel
-            x2 = (gridspacing * x + self.xoffset + full_deg_x_off) * self.pixel
+            x2 = ((xstart + self.xoffset) + (x * gridspacing)) * self.pixel
             y2 = ((-90 - self.yoffset) * -1) * self.pixel
             self.drawbuffer.line(((x1,y1),(x2,y2)), fill=self.color, width=self.line_or_dot_size)
-            self.drawbuffer.text((x1 + 5, 5), str(gridspacing * x), self.fontcolor, font=self.font)
-        for y in xrange(y_start,y_end):
+            self.drawbuffer.text((x1 + 5, 5), str((gridspacing * x) + xstart), self.fontcolor, font=self.font)
+        for y in xrange(gridlines_y):
             x1 = (-180 + self.xoffset) * self.pixel
-            y1 = ((gridspacing * y - self.yoffset + full_deg_y_off) * -1) * self.pixel
+            y1 = (((ystart - self.yoffset) + (gridspacing * y)) * -1) * self.pixel
             x2 = (180 + self.xoffset) * self.pixel
-            y2 = ((gridspacing * y - self.yoffset + full_deg_y_off) * -1) * self.pixel
+            y2 = (((ystart - self.yoffset) + (gridspacing * y)) * -1) * self.pixel
             self.drawbuffer.line(((x1,y1),(x2,y2)), fill=self.color, width=self.line_or_dot_size)
-            self.drawbuffer.text((5, y1 - 5 - height), str(gridspacing * y), 'black', font=self.font)
+            self.drawbuffer.text((5, y1 - 5 - height), str((gridspacing * y) + ystart), 'black', font=self.font)
         
     def read_data(self, shapefile):
         cursor = self.sqlcur.execute("SELECT ID_Shape FROM Shapes WHERE Name = ?", (shapefile,))
@@ -170,6 +232,7 @@ class ShapeRender(object):
                     self.drawbuffer.polygon(drawpoints, fill=self.color)
         
     def read_db(self):
+        #self.sqlcon = sqlite3.connect('earth-all-10m.db')
         self.sqlcon = sqlite3.connect('earth.db')
         self.sqlcur = self.sqlcon.cursor()
         
@@ -187,8 +250,8 @@ if __name__ == '__main__':
         (-180.0, -90.0, 180.0, 90.0),     # [1] xmin (smallest longitude), ymin (smallest latitude),
                                           #     xmax (biggest longitude),  ymax (biggest latitude)
         ('Arial', 'black', 40),           # [2] font, font color, font size
-        (None, None, None),               # [3] grid color, grid spacing, linewidth
-        #('black', 30, 2),                # [3] grid color, grid spacing, linewidth
+        #(None, None, None),               # [3] grid color, grid spacing, linewidth
+        ('black', 30, 2),                # [3] grid color, grid spacing, linewidth
         'lightblue',                      # [4] image background color
         ('ne_50m_land', 'brown', 1)]      # [5] tuple (shape, color, linewidth or dotsize)
         # config[0] - config[5] is mandatory
@@ -198,8 +261,8 @@ if __name__ == '__main__':
         # USA
         (-129.8, 22.7, -63.5, 49.7),      # [1] xmin, ymin, xmax, ymax
         ('Arial', 'black', 40),           # [2] font, font color, font size
-        #('black', 5, 2),                  # [3] grid color, grid spacing, linewidth
-        (None, None, None),               # [3] grid color, grid spacing, linewidth
+        ('black', 5, 2),                  # [3] grid color, grid spacing, linewidth
+        #(None, None, None),               # [3] grid color, grid spacing, linewidth
         'white',                          # [4] image background color
         ('ne_50m_coastline', 'black', 1), # [5] (shape, color, line-/dotsize)
         ('ne_50m_urban_areas', 'lightgreen', 1),               # [6] next shape
