@@ -7,5 +7,5 @@ If you like to build your own database put all the wanted files (.shp and .dbf f
 </br></br>
 ShapeRender uses the earth.db to make an image. You find three different configs at the end.
 </br></br>
-At the moment not every shape file works, so happy testing.
+Many error corrections and improvements, so please replace all files.
 [here]: http://www.naturalearthdata.com/downloads/
