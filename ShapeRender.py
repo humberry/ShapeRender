@@ -65,7 +65,10 @@ class ShapeRender(object):
         for i in range(5, len(config)):
             self.color = config[i][1]
             self.line_or_dot_size = config[i][2]
-            self.read_data(config[i][0])
+            if len(config[i]) > 3:
+                self.read_data(config[i][0], config[i][3])
+            else:
+                self.read_data(config[i][0], None)
             
         if config[3][0] != None:
             self.color = config[3][0]
@@ -173,12 +176,14 @@ class ShapeRender(object):
             self.drawbuffer.line(((x1,y1),(x2,y1)), fill=self.color, width=self.line_or_dot_size)
             self.drawbuffer.text((5, y1 - 5 - height), str((gridspacing * y) + ystart), 'black', font=self.font)
         
-    def read_data(self, shapefile):
+    def read_data(self, shapefile, shapetype):
         cursor = self.sqlcur.execute("SELECT ID_Shape FROM Shapes WHERE Name = ?", (shapefile,))
         id_shape = cursor.fetchone()
         if id_shape:
+            print
             print 'Shape ID = ' + str(id_shape[0])
         else:
+            print
             print 'No id_shape'
             return
             
@@ -188,25 +193,42 @@ class ShapeRender(object):
         max_id_poly = max(id_poly)[0]
         print 'Poly IDs = ' + str(min_id_poly) + ' - ' + str(max_id_poly)
         
-        cursor = self.sqlcur.execute("SELECT ShapeType FROM Polys WHERE ID_Shape = ?",id_shape)
-        shape_type = cursor.fetchone()[0]
+        cursor = self.sqlcur.execute("SELECT ShapeType, Name, NumParts FROM Polys WHERE ID_Shape = ? ORDER BY ID_Poly",id_shape)
+        polys = cursor.fetchall()
+        shape_type = None
+        if shapetype == None:
+            shape_type = polys[0][0]    #get first shape type
+        else:
+            shape_type = shapetype
         print 'ShapeType = ' + str(shape_type)
+        print shapefile
+        print 'polys = ' + str(len(polys))
+        s = ''
+        NumParts = []
+        for n in range(len(polys)):
+            NumParts.append(polys[n][2])
+            if polys[n][1] != None:
+                t = (polys[n][1]).decode('utf8')
+                if t[0] != ' ':
+                    s += t + ', '
 
-        cursor = self.sqlcur.execute("SELECT ID_Poly, ID_Point, X, Y, Name FROM Points WHERE ID_Poly >= ? AND ID_Poly <= ? ORDER BY ID_Poly, ID_Point", (min_id_poly, max_id_poly))
+        cursor = self.sqlcur.execute("SELECT ID_Poly, Part, ID_Point, X, Y, Name FROM Points WHERE ID_Poly >= ? AND ID_Poly <= ? ORDER BY ID_Poly, Part, ID_Point", (min_id_poly, max_id_poly))
         points = cursor.fetchall()
-        print 'length points: ' + str(len(points))
+        print 'points = ' + str(len(points))
 
         id_poly = min_id_poly
         drawpoints = []
         width, height = self.drawbuffer.textsize('0', font=self.font)
+        part = 0
         for j in xrange(len(points)):
-            if points[j][0] == id_poly:       
-                x = (points[j][2] + self.xoffset) * self.pixel
-                y = ((points[j][3] - self.yoffset) * -1) * self.pixel
+            if points[j][0] == id_poly and points[j][1] == part:
+                x = (points[j][3] + self.xoffset) * self.pixel
+                y = ((points[j][4] - self.yoffset) * -1) * self.pixel
                 if self.shape_type_def[shape_type] == 'Point':
+                    #print 'point',
                     self.drawbuffer.ellipse((x - self.line_or_dot_size, y - self.line_or_dot_size, x + self.line_or_dot_size, y + self.line_or_dot_size), fill=self.color)
-                    if points[j][4] != None:
-                        name = (points[j][4]).decode('utf8')
+                    if points[j][5] != None:
+                        name = (points[j][5]).decode('utf8')
                         self.drawbuffer.text((x + self.line_or_dot_size, y - height), name, self.fontcolor, font=self.font)
                 else:
                     drawpoints.append((x, y))
@@ -218,11 +240,19 @@ class ShapeRender(object):
                 else:
                     print 'ShapeType ' + str(shape_type) + ' is not supported.'
                     break
-                id_poly += 1
-                drawpoints = []
-                x = (points[j][2] + self.xoffset) * self.pixel
-                y = ((points[j][3] - self.yoffset) * -1) * self.pixel
-                drawpoints.append((x, y))
+                if (part + 1) < NumParts[id_poly - min_id_poly]:
+                    part += 1
+                    drawpoints = []
+                    x = (points[j][3] + self.xoffset) * self.pixel
+                    y = ((points[j][4] - self.yoffset) * -1) * self.pixel
+                    drawpoints.append((x, y))
+                else:
+                    part = 0
+                    id_poly += 1
+                    drawpoints = []
+                    x = (points[j][3] + self.xoffset) * self.pixel
+                    y = ((points[j][4] - self.yoffset) * -1) * self.pixel
+                    drawpoints.append((x, y))
             if j == len(points) - 1:
                 if self.shape_type_def[shape_type] == 'PolyLine':
                     self.drawbuffer.line(drawpoints, fill=self.color, width=self.line_or_dot_size)
@@ -249,9 +279,10 @@ if __name__ == '__main__':
                                           #     xmax (biggest longitude),  ymax (biggest latitude)
         ('Arial', 'black', 40),           # [2] font, font color, font size
         #(None, None, None),               # [3] grid color, grid spacing, linewidth
-        ('black', 30, 2),                # [3] grid color, grid spacing, linewidth
+        ('grey', 30, 2),                  # [3] grid color, grid spacing, linewidth
         'lightblue',                      # [4] image background color
-        ('ne_50m_land', 'brown', 1)]      # [5] tuple (shape, color, linewidth or dotsize)
+        ('ne_50m_admin_0_countries', 'lightyellow', 1),   # [5] tuple (shape, color, linewidth or dotsize)
+        ('ne_50m_admin_0_countries', 'black', 1, 3)]      # [6] tuple (shape, color, linewidth or dotsize, overwrite shape type)
         # config[0] - config[5] is mandatory
 
     config2 = [
@@ -261,8 +292,8 @@ if __name__ == '__main__':
         ('Arial', 'black', 40),           # [2] font, font color, font size
         ('black', 5, 2),                  # [3] grid color, grid spacing, linewidth
         #(None, None, None),               # [3] grid color, grid spacing, linewidth
-        'white',                          # [4] image background color
-        ('ne_50m_coastline', 'black', 1), # [5] (shape, color, line-/dotsize)
+        'lightblue',                      # [4] image background color
+        ('ne_50m_land', '#dcffd5', 1),    # [5] (shape, color, line-/dotsize)
         ('ne_50m_urban_areas', 'lightgreen', 1),               # [6] next shape
         ('ne_50m_lakes', 'lightblue', 1),                      # [7] next shape
         ('ne_50m_populated_places_simple', 'red', 5),          # [8] next shape
@@ -273,10 +304,10 @@ if __name__ == '__main__':
         # Europe
         (-15.4, 35.0, 37.5, 72.0),        # [1] xmin, ymin, xmax, ymax
         ('Arial', 'black', 40),           # [2] font, font color, font size
-        ('black', 5, 2),                  # [3] grid color, grid spacing, linewidth
-        'white',                          # [4] image background color
+        ('grey', 5, 2),                   # [3] grid color, grid spacing, linewidth
+        'lightblue',                      # [4] image background color
         ('ne_50m_coastline', 'black', 2), # [5] (shape, color, line-/dotsize)
-        ('ne_50m_land', 'lightyellow', 1),                     # [6] next shape
+        ('ne_50m_admin_0_countries', 'lightgrey', 1),          # [6] next shape
         ('ne_50m_admin_0_boundary_lines_land', 'red', 2),      # [7] next shape
         ('ne_50m_urban_areas', 'lightgreen', 1),               # [8] next shape
         ('ne_50m_populated_places_simple', 'red', 5)]          # [9] next shape
