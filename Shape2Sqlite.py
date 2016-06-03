@@ -60,7 +60,7 @@ class Shape2Sqlite(object):
                 
         cursor = self.sqlcur.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Points'")
         if cursor.fetchone()[0] == 0:
-            self.sqlcur.execute("CREATE TABLE 'Points' ('ID_Poly' INTEGER,'ID_Point' INTEGER,'X' REAL,'Y' REAL, 'Name' TEXT)")
+            self.sqlcur.execute("CREATE TABLE 'Points' ('ID_Poly' INTEGER, 'ID_Point' INTEGER, 'Part' INTEGER, 'X' REAL, 'Y' REAL, 'Name' TEXT)")
             #print 'Table Points is created'
         else:
             #print 'Table Points exists'
@@ -69,23 +69,25 @@ class Shape2Sqlite(object):
 
     def get_points(self, shape, ShapeType):
         index = 1
-        if len(shape.parts) > 1:    #NumParts > 1
-            parts_nr = len(shape.parts)
-            for k in range(parts_nr - 1):
-                index = 1
-                for l in range(shape.parts[k], shape.parts[k+1]):
-                    self.points.append((self.polys_count, index, shape.points[l][0], shape.points[l][1], None))
-                    index += 1
-            k += 1
-            index = 1
-            self.polys_count += 1
-            self.polys.append((self.shapes_count, self.polys_count, ShapeType, None, None, None, None, None, None, None))
-            for l in range(shape.parts[k], len(shape.points)):
-                self.points.append((self.polys_count, index, shape.points[l][0], shape.points[l][1], None))
-                index += 1
+        part = 0
+        num_parts = len(shape.parts)
+        num_points = len(shape.points)
+        
+        parts_end = []
+        if num_parts == 1:
+            parts_end.append(num_points)
         else:
-            for k in range(len(shape.points)):
-                self.points.append((self.polys_count, index, shape.points[k][0], shape.points[k][1], None))
+            parts_end = shape.parts[1:]
+            parts_end.append(num_points)
+
+        for i in xrange(num_points):
+            if i == parts_end[part]:
+                part += 1
+                index = 1
+                self.points.append((self.polys_count, index, part, shape.points[i][0], shape.points[i][1], None))
+                index += 1
+            else:
+                self.points.append((self.polys_count, index, part, shape.points[i][0], shape.points[i][1], None))
                 index += 1
             
     def read_files(self, file):
@@ -119,7 +121,7 @@ class Shape2Sqlite(object):
             if self.shape_type_def[ShapeType] == 'Null Shape':
                 pass
             elif self.shape_type_def[ShapeType] == 'Point':
-                self.points.append((self.polys_count, i+1, float(shapes[i].points[0][0]), float(shapes[i].points[0][1]), name))
+                self.points.append((self.polys_count, i+1, 0, float(shapes[i].points[0][0]), float(shapes[i].points[0][1]), name))
             elif self.shape_type_def[ShapeType] == 'PolyLine' or self.shape_type_def[ShapeType] == 'Polygon':
                 try:
                     Xmin, Ymin, Xmax, Ymax = shapes[i].bbox
@@ -143,7 +145,7 @@ class Shape2Sqlite(object):
             print 'added ' + str(len(self.polys)) + ' polys'
             self.sqlcon.commit()
         if len(self.points) > 0:
-            self.sqlcur.executemany("INSERT INTO Points VALUES (?, ?, ?, ?, ?)", self.points)
+            self.sqlcur.executemany("INSERT INTO Points VALUES (?, ?, ?, ?, ?, ?)", self.points)
             print 'added ' + str(len(self.points)) + ' points'
             self.sqlcon.commit()
         print
@@ -152,7 +154,9 @@ class Shape2Sqlite(object):
         
 if __name__ == '__main__':
     path = 'data/'
+    
+    files = ('ne_50m_admin_0_countries', 'ne_50m_land', 'ne_50m_coastline', 'ne_50m_urban_areas', 'ne_50m_lakes', 'ne_50m_populated_places_simple', 'ne_50m_admin_0_boundary_lines_land')
 
-    files = ('ne_50m_admin_0_countries', 'ne_50m_admin_0_countries_lakes', 'ne_50m_admin_0_boundary_lines_land', 'ne_50m_admin_0_boundary_lines_maritime_indicator', 'ne_50m_admin_0_boundary_map_units', 'ne_50m_admin_0_pacific_groupings', 'ne_50m_airports', 'ne_50m_coastline', 'ne_50m_geographic_lines', 'ne_50m_lakes', 'ne_50m_lakes_historic', 'ne_50m_land', 'ne_50m_ocean', 'ne_50m_populated_places_simple', 'ne_50m_ports', 'ne_50m_rivers_lake_centerlines', 'ne_50m_urban_areas', 'ne_50m_wgs84_bounding_box')
+    #files = ('ne_50m_admin_0_countries', 'ne_50m_admin_0_countries_lakes', 'ne_50m_admin_0_boundary_lines_land', 'ne_50m_admin_0_boundary_lines_maritime_indicator', 'ne_50m_admin_0_boundary_map_units', 'ne_50m_admin_0_pacific_groupings', 'ne_50m_airports', 'ne_50m_coastline', 'ne_50m_geographic_lines', 'ne_50m_lakes', 'ne_50m_lakes_historic', 'ne_50m_land', 'ne_50m_ocean', 'ne_50m_populated_places_simple', 'ne_50m_ports', 'ne_50m_rivers_lake_centerlines', 'ne_50m_urban_areas', 'ne_50m_wgs84_bounding_box')
     
     Shape2Sqlite(path, files)
