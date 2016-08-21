@@ -285,8 +285,8 @@ if __name__ == '__main__':
         (-180.0, -90.0, 180.0, 90.0),     # [1] xmin (smallest longitude), ymin (smallest latitude),
                                           #     xmax (biggest longitude),  ymax (biggest latitude)
         ('Arial', 'black', 40),           # [2] font, font color, font size
-        #(None, None, None),               # [3] grid color, grid spacing, linewidth
-        ('grey', 30, 2),                  # [3] grid color, grid spacing, linewidth
+        #(None, None, None),               # [3] grid color, grid spacing (float), linewidth
+        ('grey', 30.0, 2),                  # [3] grid color, grid spacing (float), linewidth
         'lightblue',                      # [4] image background color
         ('ne_50m_admin_0_countries', 'lightyellow', 1),   # [5] tuple (shape, color, linewidth or dotsize)
         ('ne_50m_admin_0_countries', 'black', 1, 3)]      # [6] tuple (shape, color, linewidth or dotsize, overwrite shape type)
@@ -297,8 +297,8 @@ if __name__ == '__main__':
         # USA
         (-129.8, 22.7, -63.5, 49.7),      # [1] xmin, ymin, xmax, ymax
         ('Arial', 'black', 40),           # [2] font, font color, font size
-        ('black', 5, 2),                  # [3] grid color, grid spacing, linewidth
-        #(None, None, None),               # [3] grid color, grid spacing, linewidth
+        ('black', 5.0, 2),                  # [3] grid color, grid spacing (float), linewidth
+        #(None, None, None),               # [3] grid color, grid spacing (float), linewidth
         'lightblue',                      # [4] image background color
         ('ne_50m_land', '#dcffd5', 1),    # [5] (shape, color, line-/dotsize)
         ('ne_50m_urban_areas', 'lightgreen', 1),               # [6] next shape
@@ -311,7 +311,7 @@ if __name__ == '__main__':
         # Europe
         (-15.4, 35.0, 37.5, 72.0),        # [1] xmin, ymin, xmax, ymax
         ('Arial', 'black', 40),           # [2] font, font color, font size
-        ('grey', 5, 2),                   # [3] grid color, grid spacing, linewidth
+        ('grey', 5.0, 2),                   # [3] grid color, grid spacing (float), linewidth
         'lightblue',                      # [4] image background color
         ('ne_50m_coastline', 'black', 2), # [5] (shape, color, line-/dotsize)
         ('ne_50m_admin_0_countries', 'lightgrey', 1),          # [6] next shape
