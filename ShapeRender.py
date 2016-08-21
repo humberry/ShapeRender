@@ -80,6 +80,13 @@ class ShapeRender(object):
         #print 'time for select: ' + str(end-start)
         
     def draw_grid(self, gridspacing):
+        dec_place = len(str(gridspacing)) - str(gridspacing).find('.') - 1
+        flt_format = ''
+        if dec_place > 0:
+            flt_format = '%.' + str(dec_place) + 'f'    # x decimal places as in gridspacing
+        else:
+            flt_format = '%.1f'    # only one decimal place
+        #print(flt_format)
         xmin_int = int(self.xmin)
         xmax_int = int(self.xmax)
         ymin_int = int(self.ymin)
@@ -159,8 +166,8 @@ class ShapeRender(object):
             yend = self.ymax
             #print 'Gridspacing is too wide!'
 
-        gridlines_x = int((xend - xstart) / gridspacing) + 1
-        gridlines_y = int((yend - ystart) / gridspacing) + 1
+        gridlines_x = int((xend - xstart) / gridspacing) + 2
+        gridlines_y = int((yend - ystart) / gridspacing) + 2
         
         width, height = self.drawbuffer.textsize('0', font=self.font)
         for x in xrange(gridlines_x):
@@ -168,13 +175,13 @@ class ShapeRender(object):
             y1 = ((self.ymax - self.yoffset) * -1) * self.pixel
             y2 = ((self.ymin - self.yoffset) * -1) * self.pixel
             self.drawbuffer.line(((x1,y1),(x1,y2)), fill=self.color, width=self.line_or_dot_size)
-            self.drawbuffer.text((x1 + 5, 5), str((gridspacing * x) + xstart), self.fontcolor, font=self.font)
+            self.drawbuffer.text((x1 + 5, 5), flt_format % ((gridspacing * x) + xstart), self.fontcolor, font=self.font)
         for y in xrange(gridlines_y):
             x1 = (self.xmin + self.xoffset) * self.pixel
             y1 = (((ystart - self.yoffset) + (gridspacing * y)) * -1) * self.pixel
             x2 = (self.xmax + self.xoffset) * self.pixel
             self.drawbuffer.line(((x1,y1),(x2,y1)), fill=self.color, width=self.line_or_dot_size)
-            self.drawbuffer.text((5, y1 - 5 - height), str((gridspacing * y) + ystart), 'black', font=self.font)
+            self.drawbuffer.text((5, y1 - 5 - height), flt_format % ((gridspacing * y) + ystart), self.fontcolor, font=self.font)
         
     def read_data(self, shapefile, shapetype):
         cursor = self.sqlcur.execute("SELECT ID_Shape FROM Shapes WHERE Name = ?", (shapefile,))
